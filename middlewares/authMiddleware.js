@@ -1,29 +1,33 @@
-const jwt = require('jsonwebtoken');
-const config = require('../config/config');
+const jwt = require("jsonwebtoken");
 
-const verifyToken = (req, res, next) => {
-    const token = req.headers['authorization'] || req.header('Authorization');
-    
+const authMiddleware = (requiredRoles = []) => {
+  return (req, res, next) => {
+    const token = req.headers.authorization?.split(" ")[1];
+
     if (!token) {
-        return res.status(401).json({ message: 'No token provided.' });
+      return res.status(401).json({ message: "Authorization token is required" });
     }
 
-    const tokenString = token.split(' ')[1] || token; 
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    jwt.verify(tokenString, config.jwt.secret || process.env.JWT_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(401).json({ message: 'Failed to authenticate token.' });
-        }
+      if (!decoded.userId || !decoded.name || !decoded.role) {
+        return res.status(401).json({ message: "Invalid token payload" });
+      }
 
-        if (decoded.userId) {
-            req.userId = decoded.userId;
-        }
-        if (decoded.adminId) {
-            req.adminId = decoded.adminId;
-        }
+      req.userId = decoded.userId;
+      req.userName = decoded.name;
+      req.userRole = decoded.role; 
 
-        next();
-    });
+      if (requiredRoles.length && !requiredRoles.includes(req.userRole)) {
+        return res.status(403).json({ message: "You do not have the required permissions" });
+      }
+
+      next();
+    } catch (error) {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+  };
 };
 
-module.exports = verifyToken;
+module.exports = authMiddleware;

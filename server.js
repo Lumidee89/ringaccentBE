@@ -1,17 +1,20 @@
-const express = require('express');
+const express = require("express");
+const { json } = require("express");
 const cors = require("cors");
 const http = require('http');
-const connectDB = require("./config/db");
-const config = require('./config/config');
+const connectDB = require("./config/db.js");
 const authRoutes = require('./routes/authRoutes');
+const authMiddleware = require('./middlewares/authMiddleware');
 const audioRoutes = require('./routes/audioRoutes');
 const WebSocket = require('ws');
 const { handleWebSocketConnection } = require('./controllers/audioController');
 const app = express();
+const dotenv = require("dotenv");
+dotenv.config();
 
 connectDB();
 
-app.use(express.json());
+app.use(json());
 
 const allowedOrigins = [
     "http://localhost:5173",

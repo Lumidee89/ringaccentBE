@@ -1,9 +1,12 @@
 const express = require('express');
 const cors = require("cors");
+const http = require('http');
 const connectDB = require("./config/db");
 const config = require('./config/config');
 const authRoutes = require('./routes/authRoutes');
-
+const audioRoutes = require('./routes/audioRoutes');
+const WebSocket = require('ws');
+const { handleWebSocketConnection } = require('./controllers/audioController');
 const app = express();
 
 connectDB();
@@ -32,6 +35,11 @@ const allowedOrigins = [
   );
 
 app.use('/api/auth', authRoutes);
+app.use('/api/audio', audioRoutes);
+
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+wss.on('connection', (ws) => { handleWebSocketConnection(ws); });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

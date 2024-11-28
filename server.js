@@ -55,6 +55,10 @@ const wss = new WebSocket.Server({ server });
 wss.on('connection', (ws) => { handleWebSocketConnection(ws); });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
+});
+wss.on('connection', (ws) => {
+  console.log('WebSocket connection established');
+  handleWebSocketConnection(ws);
 });

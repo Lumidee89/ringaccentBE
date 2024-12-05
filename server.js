@@ -51,8 +51,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/audio', audioRoutes);
 
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-wss.on('connection', (ws) => { handleWebSocketConnection(ws); });
+// const wss = new WebSocket.Server({ server });
+// wss.on('connection', (ws) => { handleWebSocketConnection(ws); });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {

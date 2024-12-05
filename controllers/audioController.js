@@ -19,31 +19,38 @@ async function convertToCanadianAccent(text) {
     return response.audioContent;
   }
 
-async function handleAudioMessage(ws, message) {
-  const transcription = await transcribeAudio(message);
-  let processedAudio;
-  if (isAccentConversionActive()) {
-    processedAudio = await convertToCanadianAccent(transcription);
-  } else {
-    processedAudio = transcription;
-  }
+  async function handleAudioMessage(ws, message) {
+    const transcription = await transcribeAudio(message);
+    let processedAudio;
+    if (isAccentConversionActive()) {
+      processedAudio = await convertToCanadianAccent(transcription);
+    } else {
+      processedAudio = transcription; 
+    }
+  
+    return processedAudio;
+  }  
 
-  ws.send(processedAudio);
-}
-
-function handleWebSocketConnection(ws) {
+  function handleWebSocketConnection(ws) {
     console.log('Client connected');
     activeSockets.push(ws);
   
     ws.on('message', async (message) => {
       console.log('Received audio data');
+      try {
+        const processedData = await handleAudioMessage(ws, message);
+        ws.send(Buffer.from(processedData)); 
+      } catch (error) {
+        console.error('Error handling message:', error);
+        ws.send(JSON.stringify({ error: 'Failed to process audio', details: error.message }));
+      }
     });
   
     ws.on('close', () => {
       console.log('Client disconnected');
       activeSockets = activeSockets.filter(socket => socket !== ws);
     });
-  }
+  }  
 
 async function transcribeAudio(audioBuffer) {
   const audioBytes = audioBuffer.toString('base64');

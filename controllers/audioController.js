@@ -2,22 +2,34 @@ const { isAccentConversionActive } = require('./ringCentralController');
 const WebSocket = require('ws');
 const speech = require('@google-cloud/speech');
 const client = new speech.SpeechClient();
-const textToSpeech = require('@google-cloud/text-to-speech');
-const ttsClient = new textToSpeech.TextToSpeechClient();
+const axios = require('axios');
 
 let activeSockets = [];
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 async function convertToCanadianAccent(text) {
-    const request = {
-      input: { text },
-      voice: { languageCode: 'en-CA', name: 'en-CA-Wavenet-A' },
-      audioConfig: { audioEncoding: 'LINEAR16' },
-    };
-  
-    const [response] = await ttsClient.synthesizeSpeech(request);
-    console.log('Canadian accent audio generated');
-    return response.audioContent;
+  try {
+      const response = await axios.post(
+          'https://api.openai.com/v1/audio/synthesize',
+          {
+              input: { text },
+              voice: "en-CA-Standard-A",
+          },
+          {
+              headers: {
+                  Authorization: `Bearer ${OPENAI_API_KEY}`,
+                  'Content-Type': 'application/json',
+              },
+          }
+      );
+
+      console.log('Canadian accent audio generated');
+      return Buffer.from(response.data.audio); 
+  } catch (error) {
+      console.error('Error in OpenAI TTS:', error.message);
+      throw new Error('Failed to generate Canadian accent audio');
   }
+}
 
   async function handleAudioMessage(ws, message) {
     const transcription = await transcribeAudio(message);
